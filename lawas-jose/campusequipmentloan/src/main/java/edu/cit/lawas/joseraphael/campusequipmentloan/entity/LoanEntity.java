@@ -1,36 +1,44 @@
 package edu.cit.lawas.joseraphael.campusequipmentloan.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "loan")
 public class LoanEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    public enum Status {
+        ONGOING, RETURNED, OVERDUE
+    }
 
-    @ManyToOne
-    @JoinColumn(name = "equipment_id", nullable = false)
-    private EquipmentEntity equipment;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
     private StudentEntity student;
 
+    @ManyToOne
+    @JoinColumn(name = "equipment_id", nullable = false)
+    private EquipmentEntity equipment;
+
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
+
+    @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
+
+    @Column(name = "return_date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate returnDate;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Status status;
 
-    public enum Status {
-        ONGOING,
-        RETURNED,
-        OVERDUE
-    }
-
+    // Getters & Setters
     public Long getId() {
         return id;
     }
@@ -39,20 +47,20 @@ public class LoanEntity {
         this.id = id;
     }
 
-    public EquipmentEntity getEquipment() {
-        return equipment;
-    }
-
-    public void setEquipment(EquipmentEntity equipment) {
-        this.equipment = equipment;
-    }
-
     public StudentEntity getStudent() {
         return student;
     }
 
     public void setStudent(StudentEntity student) {
         this.student = student;
+    }
+
+    public EquipmentEntity getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(EquipmentEntity equipment) {
+        this.equipment = equipment;
     }
 
     public LocalDate getStartDate() {

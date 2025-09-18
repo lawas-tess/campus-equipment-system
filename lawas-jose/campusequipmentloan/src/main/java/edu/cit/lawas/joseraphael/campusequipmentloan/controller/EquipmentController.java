@@ -5,6 +5,7 @@ import edu.cit.lawas.joseraphael.campusequipmentloan.service.EquipmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -17,13 +18,30 @@ public class EquipmentController {
         this.equipmentService = equipmentService;
     }
 
-    @PostMapping("/addEquipment")
-    public ResponseEntity<EquipmentEntity> addEquipment(@RequestBody EquipmentEntity equipment) {
-        equipmentService.save(equipment);
-        return ResponseEntity.ok(equipment);
+    @PostMapping
+    public ResponseEntity<?> addEquipment(@RequestBody EquipmentEntity equipment) {
+        try {
+            equipmentService.save(equipment);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Equipment added successfully.",
+                    "id", equipment.getId(),
+                    "name", equipment.getName(),
+                    "type", equipment.getType(),
+                    "serialNumber", equipment.getSerialNumber(),
+                    "availability", equipment.isAvailability()
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.ok(Map.of(
+                    "error", e.getMessage(),
+                    "name", equipment.getName(),
+                    "type", equipment.getType(),
+                    "serialNumber", equipment.getSerialNumber()
+            ));
+        }
     }
 
-    @GetMapping("/getAllEquipment")
+
+    @GetMapping
     public ResponseEntity<List<EquipmentEntity>> getAllEquipment() {
         return ResponseEntity.ok(equipmentService.getAll());
     }

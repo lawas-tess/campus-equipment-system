@@ -1,4 +1,5 @@
 package edu.cit.lawas.joseraphael.campusequipmentloan.service;
+
 import edu.cit.lawas.joseraphael.campusequipmentloan.entity.EquipmentEntity;
 import edu.cit.lawas.joseraphael.campusequipmentloan.entity.LoanEntity;
 import edu.cit.lawas.joseraphael.campusequipmentloan.entity.StudentEntity;
@@ -6,6 +7,7 @@ import edu.cit.lawas.joseraphael.campusequipmentloan.penalty.FixedPenaltyStrateg
 import edu.cit.lawas.joseraphael.campusequipmentloan.penalty.PenaltyStrategy;
 import edu.cit.lawas.joseraphael.campusequipmentloan.repository.LoanRepository;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -23,11 +25,10 @@ public class LoanService {
         this.loanRepository = loanRepository;
         this.equipmentService = equipmentService;
         this.studentService = studentService;
-        this.penaltyStrategy = new FixedPenaltyStrategy(); // Strategy in use
+        this.penaltyStrategy = new FixedPenaltyStrategy();
     }
 
-    // Create a new loan
-    public void createLoan(Long studentId, Long equipmentId) {
+    public LoanEntity createLoan(Long studentId, Long equipmentId, LocalDate startDate) {
         StudentEntity student = studentService.getById(studentId);
         EquipmentEntity equipment = equipmentService.getById(equipmentId);
 
@@ -43,36 +44,49 @@ public class LoanService {
         LoanEntity loan = new LoanEntity();
         loan.setStudent(student);
         loan.setEquipment(equipment);
-        loan.setStartDate(LocalDate.now());
-        loan.setDueDate(LocalDate.now().plusDays(7));
+        loan.setStartDate(startDate);  // ✅ custom start date
+        loan.setDueDate(startDate.plusDays(7)); // ✅ due date based on custom start
         loan.setStatus(LoanEntity.Status.ONGOING);
 
         loanRepository.save(loan);
         equipmentService.updateAvailability(equipmentId, false);
+
+        return loan;
     }
 
-    // Return loan
-    public void returnLoan(Long loanId) {
-        LoanEntity loan = loanRepository.findById(loanId);
-        loan.setReturnDate(LocalDate.now());
 
-        if (loan.getReturnDate().isAfter(loan.getDueDate())) {
+    public double returnLoan(Long loanId, LocalDate returnDate) {
+        LoanEntity loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new IllegalStateException("Loan not found"));
+
+        // If already returned
+        if (loan.getStatus() == LoanEntity.Status.RETURNED || loan.getStatus() == LoanEntity.Status.OVERDUE) {
+            throw new IllegalStateException("Already returned, loan another equipment");
+        }
+
+        loan.setReturnDate(returnDate);
+
+        if (returnDate.isAfter(loan.getDueDate())) {
             loan.setStatus(LoanEntity.Status.OVERDUE);
         } else {
             loan.setStatus(LoanEntity.Status.RETURNED);
         }
 
-        loanRepository.updateStatus(loan.getId(), loan.getStatus(), loan.getReturnDate());
+        double penalty = penaltyStrategy.calculatePenalty(loan);
+        loanRepository.save(loan);
+
+        // Mark equipment as available again
         equipmentService.updateAvailability(loan.getEquipment().getId(), true);
+
+        return penalty;
     }
 
-    // Calculate penalty
+
     public double calculatePenalty(Long loanId) {
-        LoanEntity loan = loanRepository.findById(loanId);
+        LoanEntity loan = loanRepository.findById(loanId).orElseThrow();
         return penaltyStrategy.calculatePenalty(loan);
     }
 
-    // Get all loans
     public List<LoanEntity> getAll() {
         return loanRepository.findAll();
     }
