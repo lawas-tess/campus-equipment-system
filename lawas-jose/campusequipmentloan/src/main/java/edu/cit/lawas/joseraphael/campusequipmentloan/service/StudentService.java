@@ -2,6 +2,7 @@ package edu.cit.lawas.joseraphael.campusequipmentloan.service;
 
 import edu.cit.lawas.joseraphael.campusequipmentloan.entity.StudentEntity;
 import edu.cit.lawas.joseraphael.campusequipmentloan.repository.StudentRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,9 +11,16 @@ import java.util.List;
 public class StudentService {
 
     private final StudentRepository studentRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public StudentService(StudentRepository studentRepository) {
+    public StudentService(StudentRepository studentRepository, PasswordEncoder passwordEncoder) {
         this.studentRepository = studentRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public StudentEntity register(StudentEntity student) {
+        student.setPassword(passwordEncoder.encode(student.getPassword()));
+        return studentRepository.save(student);
     }
 
     public StudentEntity getById(Long id) {

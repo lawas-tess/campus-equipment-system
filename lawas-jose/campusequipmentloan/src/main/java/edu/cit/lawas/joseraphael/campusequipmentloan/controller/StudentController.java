@@ -18,6 +18,28 @@ public class StudentController {
         this.studentService = studentService;
     }
 
+    // Register new student
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody StudentEntity student) {
+        try {
+            StudentEntity saved = studentService.register(student);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Student registered successfully.",
+                    "id", saved.getId(),
+                    "studentNo", saved.getStudentNo(),
+                    "fname", saved.getFname(),
+                    "lname", saved.getLname(),
+                    "uname", saved.getUname(),
+                    "email", saved.getEmail()
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        }
+    }
+
+    // Alternative addStudent (without password encoding)
     @PostMapping
     public ResponseEntity<?> addStudent(@RequestBody StudentEntity student) {
         try {
@@ -26,21 +48,19 @@ public class StudentController {
                     "message", "Student added successfully.",
                     "id", student.getId(),
                     "studentNo", student.getStudentNo(),
-                    "name", student.getName(),
+                    "fname", student.getFname(),
+                    "lname", student.getLname(),
+                    "uname", student.getUname(),
                     "email", student.getEmail()
             ));
         } catch (IllegalStateException e) {
-            return ResponseEntity.ok(Map.of(
-                    "error", e.getMessage(),
-                    "studentNo", student.getStudentNo(),
-                    "name", student.getName(),
-                    "email", student.getEmail()
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
             ));
         }
     }
 
-
-
+    // Get all students
     @GetMapping
     public ResponseEntity<List<StudentEntity>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAll());
